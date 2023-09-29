@@ -80,8 +80,14 @@ while True:
 
             # Get user by notified socket, so we will know who sent the message
             user = clients[notified_socket]
-
-            print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
+            
+            # Check if the message is a calculator result
+            if message["data"].decode("utf-8").startswith("calc_result"):
+                # Extract the result from the message
+                calc_result = message["data"].decode("utf-8")[len("calc_result"):]
+                print(f'Received calculator result from {user["data"].decode("utf-8")}: {calc_result}')
+            else:
+                print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
 
             # Iterate over connected clients and broadcast message
             for client_socket in clients:

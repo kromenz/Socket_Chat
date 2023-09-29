@@ -72,10 +72,11 @@ def calculator():
             try:
                 res = eval(conta)
                 res_str = str(res)  # Converter o resultado em uma string
-                res_str = res_str.encode('utf-8')
-                res_header = f"{len(res_str):<{HEADER_LENGTH}}".encode('utf-8')
-                client_socket.send(res_header + res_str)
-                print(f"\nO resultado da conta é {res_str.decode()}")
+                message_type = "calc_result"  # Custom header to identify calculator result
+                message = f"{message_type}{res_str}".encode('utf-8')  # Include message type in the message
+                message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+                client_socket.send(message_header + message)
+                print(f"\nO resultado da conta é {res_str}")
                 time.sleep(3)
             except Exception as e:
                 print(f"Error calculating expression: {e}")
