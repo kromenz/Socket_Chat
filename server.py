@@ -1,10 +1,12 @@
 import socket
 import select
+import queue
 
 HEADER_LENGTH = 10
 
 IP = "127.0.0.1"
 PORT = 1234
+
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind((IP, PORT))
@@ -12,7 +14,8 @@ server_socket.listen()
 
 sockets_list = [server_socket]
 
-clients= {}
+clients = {}
+clients_queue = queue.Queue()
 
 print(f"Listening for connections on {IP}:{PORT}...")
 
@@ -30,6 +33,9 @@ def receive_message(client_socket):
     except:
         return False
 
+# Define the maximum number of allowed clients
+MAX_CLIENTS = 5
+waiting_clients = []
 
 while True:
     read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
@@ -37,12 +43,26 @@ while True:
     # Iterate over notified sockets
     for notified_socket in read_sockets:
 
-        # If notified socket is a server socket - new connection, accept it
         if notified_socket == server_socket:
+            
+            # Check if the maximum number of clients has been reached
+            if len(sockets_list) - 1 >= MAX_CLIENTS:
+                print("Maximum number of clients reached. Adding to waiting list...")
+                
+                # Accept new connection
+                client_socket, client_address = server_socket.accept()
 
+                # Client should send his name right away, receive it
+                user = receive_message(client_socket)
+
+                # If False - client disconnected before he sent his name
+                if user is False:
+                    continue
+
+                waiting_clients.append((client_socket, user))
+                continue
+            
             # Accept new connection
-            # That gives us new socket - client socket, connected to this given client only, it's unique for that client
-            # The other returned object is ip/port set
             client_socket, client_address = server_socket.accept()
 
             # Client should send his name right away, receive it
@@ -59,10 +79,10 @@ while True:
             clients[client_socket] = user
 
             print('Accepted new connection from {}:{}, username: {}'.format(*client_address, user['data'].decode('utf-8')))
+            print(clients)
 
         # Else existing socket is sending a message
         else:
-
             # Receive message
             message = receive_message(notified_socket)
 
@@ -76,6 +96,13 @@ while True:
                 # Remove from our list of users
                 del clients[notified_socket]
 
+                # If there are clients in the queue, accept the next one
+                if not clients_queue.empty():
+                    client_socket = clients_queue.get()
+                    sockets_list.append(client_socket)
+                    clients[client_socket] = receive_message(client_socket)
+                    print('Accepted client from the queue.')
+
                 continue
 
             # Get user by notified socket, so we will know who sent the message
@@ -88,6 +115,7 @@ while True:
                 print(f'Received calculator result from {user["data"].decode("utf-8")}: {calc_result}')
             else:
                 print(f'Received message from {user["data"].decode("utf-8")}: {message["data"].decode("utf-8")}')
+
 
             # Iterate over connected clients and broadcast message
             for client_socket in clients:
@@ -107,5 +135,3 @@ while True:
 
         # Remove from our list of users
         del clients[notified_socket]
-
-    
