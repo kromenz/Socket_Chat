@@ -3,7 +3,7 @@ import threading
 
 # Connection Data
 host = '127.0.0.1'
-port = 1234
+port = 55555
 
 # Starting Server
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,50 +15,37 @@ clients = []
 nicknames = []
 
 # Sending Messages To All Connected Clients
-def broadcast(message, client):
-    for c in clients:
-        if c != client:
-            c.send(message)
-
+def broadcast(message):
+    for client in clients:
+        client.send(message)
+        
+# Handling Messages From Clients
 def handle(client):
     address = client.getpeername()  # Obtém o endereço IP e a porta do cliente
     while True:
         try:
-            # Receber mensagem do cliente
-            message = client.recv(1024).decode('ascii')
-            # print(message)
+            # Broadcasting Messages
+            message = client.recv(1024)
             client_address = f"{address[0]}:{address[1]}"  # Obtém o endereço IP e a porta do cliente
-            msg = str(message)
-            if msg == "0":  # Verifica se o cliente enviou 0 como sinal de desconexão
-                index = clients.index(client)
-                clients.remove(client)
-                client.close()
-                nickname = nicknames[index]
-                broadcast('{} has left the chat!'.format(nickname).encode('ascii'), client)
-                nicknames.remove(nickname)
-                break  # Sair do loop quando o cliente sair
-
-            # Enviar a mensagem para todos os outros clientes
             print(f"{client_address} > {message}")
-            broadcast(message, client)
-            
+            broadcast(message)
         except:
-            # Remover e fechar clientes em caso de erro
+            # Removing And Closing Clients
             index = clients.index(client)
             clients.remove(client)
             client.close()
             nickname = nicknames[index]
-            broadcast('{} left!'.format(nickname).encode('ascii'), client)
+            print(f"{nickname} disconnected from the server!")
+            broadcast('{} left!'.format(nickname).encode('ascii'))
             nicknames.remove(nickname)
-            # Não é necessário chamar break aqui, pois o loop continuará a ouvir outras mensagens
-            continue  # Continue ouvindo outras mensagens
-
+            break
+        
 # Receiving / Listening Function
 def receive():
     while True:
         # Accept Connection
         client, address = server.accept()
-        print("Connected with {}".format(str(address)))
+        # print("Connected with {}".format(str(address)))
 
         # Request And Store Nickname
         client.send('NICK'.encode('ascii'))
@@ -67,13 +54,13 @@ def receive():
         clients.append(client)
 
         # Print And Broadcast Nickname
-        print("{} has joined the server".format(nickname))
-        broadcast("{} joined the chat!".format(nickname).encode('ascii'), client)
-        client.send('Connected to server ("/back" to exit)!'.encode('ascii'))
+        print(f"Nickname is {nickname} connected from {str(address)}")
+        broadcast("{} joined!".format(nickname).encode('ascii'))
+        client.send('Connected to server!'.encode('ascii'))
 
         # Start Handling Thread For Client
         thread = threading.Thread(target=handle, args=(client,))
         thread.start()
         
-print(f"Server listening on {host}:{port}...")
+print(f"Server listening on {host} : {port}...")
 receive()
