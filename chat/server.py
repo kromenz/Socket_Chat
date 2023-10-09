@@ -1,5 +1,7 @@
+import os
 import socket
 import threading
+import time
 
 # Connection Data
 host = '127.0.0.1'
@@ -44,6 +46,13 @@ def handle(client):
                     print(f'{name_to_ban} was banned!')
                 else:
                     client.send('Command was refused!'.encode('ascii'))
+            
+            elif msg.decode('ascii').startswith('LIST'):
+                if nicknames[clients.index(client)] == 'admin':
+                    client.send("\nConnected Clients:\n".encode('ascii') + ", ".join(nicknames).encode('ascii'))
+                else:
+                    client.send('Command was refused!'.encode('ascii'))
+                    
             else:
                 print(f"{client_address} > {message}")
                 broadcast(message)
@@ -82,7 +91,7 @@ def receive():
         if nickname == "admin":
             client.send('PASS'.encode('ascii'))
             password = client.recv(1024).decode('ascii')
-            if password != "admin123":
+            if password != "123":
                 client.send('REFUSE'.encode('ascii'))
                 client.close()
                 continue 
@@ -108,6 +117,9 @@ def kick_user(name):
         client_to_kick.close()
         nicknames.remove(name)
         broadcast(f'{name} was kicked by an admin'.encode('ascii'))
+    else:
+        admin_client = clients[nicknames.index('admin')]
+        admin_client.send(f'User {name} not found'.encode('ascii'))
         
 print(f"Server listening on {host} : {port}...")
 receive()
