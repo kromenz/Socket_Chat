@@ -1,14 +1,6 @@
 import socket
 import sys
 
-# Função para avaliar a expressão matemática
-def calcular(expressao):
-    try:
-        resultado = eval(expressao)
-        return str(resultado)
-    except:
-        return "Erro na expressão"
-
 # Configurações do servidor
 host = '127.0.0.1'  # Endereço IP do servidor
 port = 12345       # Porta do servidor
@@ -27,6 +19,15 @@ except socket.error as msg:
 server_socket.listen(5)
 
 print('Aguardando conexões...')
+
+
+# Função para avaliar a expressão matemática
+def calcular(expressao):
+    try:
+        resultado = eval(expressao)
+        return str(resultado)
+    except:
+        return "Erro na expressão"
 
 while True:
     # Aceita uma conexão de cliente

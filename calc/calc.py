@@ -6,15 +6,6 @@ import time
 host = '127.0.0.1'  # Endereço IP do servidor
 port = 12345       # Porta do servidor
 
-# Função para obter a escolha do usuário
-def obter_escolha():
-    print("\n\tEscolha uma opção:")
-    print("\t1. Introduzir uma expressão")
-    print("\t2. Sair do programa")
-    escolha = input("\tOpção (1 / 2): ")
-    os.system('cls')
-    return escolha
-
 # Criação do socket do cliente
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -24,6 +15,15 @@ try:
 except socket.error as msg:
     print('Erro ao conectar ao servidor: ' + str(msg))
     exit()
+    
+# Função para obter a escolha do usuário
+def obter_escolha():
+    print("\n\tEscolha uma opção:")
+    print("\t1. Introduzir uma expressão")
+    print("\t2. Sair do programa")
+    escolha = input("\tOpção (1 / 2): ")
+    os.system('cls')
+    return escolha
 
 while True:
     escolha = obter_escolha()
@@ -32,11 +32,16 @@ while True:
     client_socket.send(escolha.encode('utf-8'))
 
     if escolha == '1':
+        
         # Solicita ao usuário uma expressão matemática
         expressao = input('Digite uma expressão matemática: ')
-
-        # Envia a expressão para o servidor
-        client_socket.send(expressao.encode('utf-8'))
+        
+        try:
+            # Envia a expressão para o servidor
+            client_socket.send(expressao.encode('utf-8'))
+        except:
+            print("Ocorreu um erro ao enviar a expressão...")
+            continue
 
         # Recebe o resultado do servidor
         resultado = client_socket.recv(1024).decode('utf-8')

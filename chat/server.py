@@ -1,7 +1,5 @@
-import os
 import socket
 import threading
-import time
 
 # Connection Data
 host = '127.0.0.1'
